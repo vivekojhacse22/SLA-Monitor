@@ -31,10 +31,7 @@ The same timer can send deduplicated warning and missed-SLA emails through Micro
         v
   Concurrent runs, one per ruleset         runner.py
   up to 50 at a time, 20s budget each
-   +-- Azure AI / Ruleset EMEA
-   +-- Azure AI / Ruleset ATZ
-   +-- FabricBI / Ruleset S500
-   +-- SQL VM / Ruleset Manager
+
    +-- ...
         |
         v
@@ -85,15 +82,15 @@ rulesets may both alert on the same case, but neither will alert twice.
   "concurrency": { "max_concurrent_runs": 50, "run_timeout_seconds": 20 },
   "businesses": [
     {
-      "name": "Azure AI",
+      "name": "DTP-DP-Integration",
       "match": { "country": ["India"] },
       "rulesets": [
         {
-          "id": "azure-ai-emea",
-          "name": "Azure AI / Ruleset EMEA",
+          "id": "azure-integraion",
+          "name": "integration / Ruleset EMEA",
           "warn_minutes": 60,
           "alert_on": ["pending", "missed"],
-          "match": { "support_region_contains": ["EMEA"] },
+          "match": { "support_region_contains": ["India"] },
           "notify": {
             "teams_chat_id": "",
             "teams_webhook_url": "",
