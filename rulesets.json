@@ -19,9 +19,7 @@
           "alert_on": ["pending"],
           "match": {},
           "notify": {
-            "teams_chat_id": "",
-            "teams_webhook_url": "",
-            "email_recipients": ["viojha@microsoft.com"]
+            "teams_webhook_url": ""
           }
         },
         {
@@ -33,9 +31,7 @@
           "alert_on": ["pending"],
           "match": {},
           "notify": {
-            "teams_chat_id": "",
-            "teams_webhook_url": "",
-            "email_recipients": ["viojha@microsoft.com"]
+            "teams_webhook_url": ""
           }
         },
         {
@@ -47,9 +43,7 @@
           "alert_on": ["pending"],
           "match": {},
           "notify": {
-            "teams_chat_id": "",
-            "teams_webhook_url": "",
-            "email_recipients": ["viojha@microsoft.com"]
+            "teams_webhook_url": ""
           }
         },
         {
@@ -61,9 +55,7 @@
           "alert_on": ["pending"],
           "match": {},
           "notify": {
-            "teams_chat_id": "",
-            "teams_webhook_url": "",
-            "email_recipients": ["viojha@microsoft.com"]
+            "teams_webhook_url": ""
           }
         },
         {
@@ -74,9 +66,7 @@
           "alert_on": ["pending"],
           "match": {},
           "notify": {
-            "teams_chat_id": "",
-            "teams_webhook_url": "",
-            "email_recipients": ["viojha@microsoft.com"]
+            "teams_webhook_url": ""
           }
         },
         {
@@ -87,9 +77,7 @@
           "alert_on": ["met"],
           "match": {},
           "notify": {
-            "teams_chat_id": "",
-            "teams_webhook_url": "",
-            "email_recipients": ["viojha@microsoft.com"]
+            "teams_webhook_url": ""
           }
         }
       ]

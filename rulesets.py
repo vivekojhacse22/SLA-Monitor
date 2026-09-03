@@ -92,9 +92,7 @@ class Ruleset:
     warn_minutes: int = 60
     after_minutes: int | None = None
     alert_on: tuple = ("pending", "missed")
-    teams_chat_id: str = ""
     teams_webhook_url: str = ""
-    email_recipients: tuple = ()
     enabled: bool = True
 
     def select(self, records):
@@ -202,9 +200,7 @@ def parse(document):
                         else None
                     ),
                     alert_on=alert_on,
-                    teams_chat_id=str(notify.get("teams_chat_id") or ""),
                     teams_webhook_url=str(notify.get("teams_webhook_url") or ""),
-                    email_recipients=tuple(notify.get("email_recipients") or ()),
                     enabled=bool(raw_ruleset.get("enabled", True)),
                 )
             )

@@ -13,14 +13,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import alerting
-import mailer
+import alert_selectors
 import teams
 
 
 SELECTORS = {
-    "pending": mailer.select_pending,
-    "missed": mailer.select_missed,
-    "met": mailer.select_met,
+    "pending": alert_selectors.select_pending,
+    "missed": alert_selectors.select_missed,
+    "met": alert_selectors.select_met,
 }
 
 

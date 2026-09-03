@@ -10,8 +10,7 @@ It holds three things, exactly as the architecture describes:
    if rulesets.json is momentarily unreachable.
 
 SQLite is used because it is a single file, needs no server, and gives the
-sync a transactional swap. The same interface is implemented by
-notification_state.TableNotificationState for the shared-cloud deployment.
+sync a transactional swap.
 """
 
 import json

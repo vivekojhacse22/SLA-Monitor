@@ -99,40 +99,10 @@ REFRESH_SECONDS = int(_env("REFRESH_SECONDS", "60") or 60)
 PAGE_SIZE = int(_env("PAGE_SIZE", "500") or 500)
 
 # --- Microsoft Teams ------------------------------------------------------
-# Direct chat delivery is preferred. A channel workflow webhook remains optional.
-TEAMS_DESTINATION_NAME = _env("TEAMS_DESTINATION_NAME", "SLA Alert Notification")
 TEAMS_NOTIFICATIONS_ENABLED = _env(
     "TEAMS_NOTIFICATIONS_ENABLED", "true"
 ).lower() in ("1", "true", "yes")
-TEAMS_CHAT_ID = _env("TEAMS_CHAT_ID")
-GRAPH_CLIENT_ID = _env("GRAPH_CLIENT_ID")
 TEAMS_WEBHOOK_URL = _env("TEAMS_WEBHOOK_URL")
-
-# Production proactive bot. These credentials are intentionally separate from
-# CLIENT_ID/CLIENT_SECRET, which belong to the Dataverse application user.
-TEAMS_BOT_CLIENT_ID = _env("TEAMS_BOT_CLIENT_ID")
-TEAMS_BOT_CLIENT_SECRET = _env("TEAMS_BOT_CLIENT_SECRET")
-TEAMS_TARGET_CONVERSATION_ID = _env("TEAMS_TARGET_CONVERSATION_ID")
-TEAMS_ALERT_SCHEDULE = _env("TEAMS_ALERT_SCHEDULE", "0 */5 * * * *")
-TEAMS_STATE_TABLE = _env("TEAMS_STATE_TABLE", "slanotifications")
-TABLE_STORAGE_ENDPOINT = _env("TABLE_STORAGE_ENDPOINT")
-
-# --- Email notifications --------------------------------------------------
-# Unattended delivery uses a dedicated Entra app with Microsoft Graph
-# Mail.Send application permission. Keep these credentials separate from the
-# Dataverse and Teams bot applications.
-EMAIL_NOTIFICATIONS_ENABLED = _env(
-    "EMAIL_NOTIFICATIONS_ENABLED", "false"
-).lower() in ("1", "true", "yes")
-EMAIL_TENANT_ID = _env("EMAIL_TENANT_ID", TENANT_ID)
-EMAIL_CLIENT_ID = _env("EMAIL_CLIENT_ID")
-EMAIL_CLIENT_SECRET = _env("EMAIL_CLIENT_SECRET")
-EMAIL_SENDER = _env("EMAIL_SENDER", "viojha@microsoft.com")
-EMAIL_RECIPIENTS = [
-    address.strip()
-    for address in _env("EMAIL_RECIPIENTS", "viojha@microsoft.com").split(",")
-    if address.strip()
-]
 
 # --- Local DB (hot cache) -------------------------------------------------
 # Cases pending SLA live here between runs, along with per-ruleset notification
@@ -155,5 +125,4 @@ RULESETS_FILE = _env("RULESETS_FILE", "rulesets.json")
 
 # --- Web server -----------------------------------------------------------
 HOST = _env("HOST", "127.0.0.1")
-# The dashboard always uses 8081 so local and VM deployments cannot drift.
 PORT = int(_env("PORT", "8081") or 8081)

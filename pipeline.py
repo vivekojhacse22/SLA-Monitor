@@ -7,7 +7,6 @@
         -> Microsoft Teams / email notifications
 
 Run it once from the command line:      python pipeline.py
-Run it on a timer in Azure Functions:   function_app.py calls run_cycle().
 """
 
 import asyncio
@@ -17,7 +16,6 @@ from datetime import datetime, timezone
 import config
 import dataverse
 import localdb
-import mailer
 import rulesets
 import runner
 import teams
@@ -32,44 +30,22 @@ def get_store():
     return _store
 
 
-def build_senders(teams_sender=None, email_sender=None):
+def build_senders(teams_sender=None):
     """Notification callables, one per alert kind, honouring each ruleset.
 
     Each sender receives (ruleset, records) so a ruleset can target its own
-    Teams chat, its own webhook, and its own email recipients. Destinations
-    left blank on a ruleset fall back to the global settings in .env.
+    Each ruleset can have its own Teams webhook. Blank destinations fall back
+    to the global webhook in .env.
     """
 
     def send_teams(ruleset, records):
-        chat_id = ruleset.teams_chat_id or config.TEAMS_CHAT_ID
         webhook = ruleset.teams_webhook_url or config.TEAMS_WEBHOOK_URL
-        if chat_id and config.GRAPH_CLIENT_ID:
-            token = teams.get_graph_token(
-                config.TENANT_ID,
-                config.GRAPH_CLIENT_ID,
-                config.LOGIN_HINT,
-                config.TOKEN_CACHE_FILE,
-            )
-            return teams.post_pending_cases_to_chat(
-                token, chat_id, records, max_minutes=ruleset.warn_minutes
-            )
         if webhook:
             return teams.post_pending_cases(
                 webhook, records, max_minutes=ruleset.warn_minutes
             )
         raise teams.TeamsNotificationError(
-            f"Ruleset '{ruleset.id}' has no Teams chat or webhook to post to."
-        )
-
-    def send_email(ruleset, records):
-        recipients = list(ruleset.email_recipients) or config.EMAIL_RECIPIENTS
-        return mailer.send_alert_email(
-            records,
-            config.EMAIL_TENANT_ID,
-            config.EMAIL_CLIENT_ID,
-            config.EMAIL_CLIENT_SECRET,
-            config.EMAIL_SENDER,
-            recipients,
+            f"Ruleset '{ruleset.id}' has no Teams webhook to post to."
         )
 
     async def dispatch(ruleset, records):
@@ -77,10 +53,6 @@ def build_senders(teams_sender=None, email_sender=None):
         if config.TEAMS_NOTIFICATIONS_ENABLED:
             count += await asyncio.to_thread(
                 teams_sender or send_teams, ruleset, records
-            )
-        if config.EMAIL_NOTIFICATIONS_ENABLED:
-            count += await asyncio.to_thread(
-                email_sender or send_email, ruleset, records
             )
         return count
 

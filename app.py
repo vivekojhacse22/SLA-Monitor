@@ -5,8 +5,8 @@ Then open http://127.0.0.1:8081 - the page refreshes itself continuously.
 
 The dashboard reads the local hot cache rather than querying Dataverse on every
 refresh, so the page stays fast no matter how many businesses are configured.
-A background thread runs the pipeline (sync -> cache -> ruleset fan-out) on the
-same cadence the Azure Functions timer uses.
+A background thread runs the pipeline (sync -> cache -> Teams alerts) on the
+configured refresh cadence.
 """
 
 import asyncio
