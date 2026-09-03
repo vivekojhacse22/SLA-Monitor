@@ -1,0 +1,11 @@
+flask>=3.0
+waitress>=3.0
+requests>=2.31
+msal[broker]>=1.28; sys_platform == "win32"
+msal>=1.28
+python-dotenv>=1.0
+azure-data-tables>=12.7
+azure-functions>=1.21
+azure-identity>=1.19
+fastapi>=0.115
+microsoft-teams-apps==2.0.16

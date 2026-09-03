@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Service Request SLA Monitor</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; background: #f3f2f1; color: #201f1e; }
+  header { background: #0f3d6e; color: #fff; padding: 16px 24px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header .sub { font-size: 12px; opacity: .8; margin-top: 4px; }
+  .cards { display: flex; gap: 12px; padding: 16px 24px 0; flex-wrap: wrap; }
+  .card { appearance: none; border: 1px solid transparent; text-align: left; color: inherit; cursor: pointer; background: #fff; border-radius: 6px; padding: 12px 18px; min-width: 130px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .card:hover { border-color: #8a8886; }
+  .card.active { border-color: #0f6cbd; box-shadow: 0 0 0 2px rgba(15,108,189,.18); }
+  .card .n { font-size: 26px; font-weight: 600; }
+  .card .l { font-size: 12px; color: #605e5c; text-transform: uppercase; letter-spacing: .4px; }
+  .state-Missed .n { color: #a4262c; }
+  .state-Pending .n { color: #a15c00; }
+  .state-Overdue .n { color: #c50f1f; }
+  .state-Complete .n { color: #107c10; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 14px 24px 0; }
+  .toolbar-actions { display: flex; align-items: center; gap: 12px; }
+  .filter { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #605e5c; }
+  .filter select { min-width: 190px; border: 1px solid #8a8886; border-radius: 4px; background: #fff; color: #201f1e; padding: 7px 28px 7px 9px; }
+  .filter select:focus { outline: 2px solid #0f6cbd; outline-offset: 1px; }
+  #status { font-size: 12px; color: #605e5c; margin: 0; }
+  #export { border: 1px solid #8a8886; border-radius: 4px; background: #fff; color: #201f1e; padding: 7px 12px; cursor: pointer; font-weight: 600; }
+  #export:hover { background: #f3f2f1; }
+  #export:disabled { cursor: default; opacity: .5; }
+  table { width: calc(100% - 48px); margin: 16px 24px 32px; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  th, td { text-align: left; padding: 9px 14px; font-size: 14px; border-bottom: 1px solid #edebe9; }
+  th { background: #faf9f8; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: #605e5c; }
+  tr.state-Missed td:first-child { border-left: 4px solid #a4262c; }
+  tr.state-Pending td:first-child { border-left: 4px solid #d29200; }
+  tr.state-Overdue td:first-child { border-left: 4px solid #c50f1f; }
+  tr.state-Complete td:first-child { border-left: 4px solid #107c10; }
+  tr.state-No-SLA-state td:first-child { border-left: 4px solid #8a8886; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+  .pill.state-Missed { background: #fde7e9; color: #a4262c; }
+  .pill.state-Pending { background: #fff4ce; color: #8a5300; }
+  .pill.state-Overdue { background: #fde7e9; color: #c50f1f; }
+  .pill.state-Complete { background: #dff6dd; color: #0b6a0b; }
+  .pill.state-No-SLA-state { background: #edebe9; color: #605e5c; }
+  #banner { display: none; margin: 12px 24px 0; padding: 10px 14px; border-radius: 4px; background: #fde7e9; color: #a4262c; font-size: 13px; }
+  .panel { margin: 16px 24px 0; background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .panel h2 { margin: 0; padding: 12px 18px; font-size: 13px; text-transform: uppercase; letter-spacing: .4px; color: #605e5c; border-bottom: 1px solid #edebe9; }
+  .panel .meta { padding: 8px 18px; font-size: 12px; color: #605e5c; border-bottom: 1px solid #edebe9; }
+  .panel table { width: 100%; margin: 0; box-shadow: none; }
+  .biz { font-weight: 600; }
+  .outcome { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+  .outcome-ok { background: #dff6dd; color: #0b6a0b; }
+  .outcome-skipped { background: #edebe9; color: #605e5c; }
+  .outcome-timeout { background: #fff4ce; color: #8a5300; }
+  .outcome-error { background: #fde7e9; color: #a4262c; }
+  .outcome-none { background: #edebe9; color: #605e5c; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Service Request SLA Monitor</h1>
+  <div class="sub">{{ environment }} &middot; live view, refreshing every {{ refresh_seconds }}s &middot; "expiring soon" = SLA due within {{ warn_minutes }} minutes</div>
+</header>
+
+<div id="banner"></div>
+
+<div class="cards" id="state-cards">
+  <button type="button" class="card active" disabled><div class="n">&hellip;</div><div class="l">Loading SLA states</div></button>
+</div>
+
+<div class="toolbar">
+  <p id="status">Loading Dynamics data&hellip;</p>
+  <div class="toolbar-actions">
+    <label class="filter" for="support-region">
+      Support Region
+      <select id="support-region" disabled>
+        <option value="">All Support Regions</option>
+      </select>
+    </label>
+    <button type="button" id="export" disabled>Export CSV</button>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Case number</th><th>Case Owner</th><th>SLA due (local)</th><th>Time remaining</th><th>SLA State</th><th>Pod</th><th>Country</th></tr>
+  </thead>
+  <tbody id="rows">
+    <tr id="loading-row"><td colspan="7" style="padding:24px;color:#605e5c">Fetching active service requests from Dynamics&hellip;</td></tr>
+  </tbody>
+</table>
+
+<div class="panel" id="pipeline">
+  <h2>Businesses &amp; rulesets</h2>
+  <div class="meta" id="pipeline-meta">Loading the ruleset configuration&hellip;</div>
+  <table>
+    <thead>
+      <tr><th>Business</th><th>Ruleset</th><th>Matched cases</th><th>Warn at</th><th>Alerts on</th><th>Last run</th><th>Took</th><th>Sent</th></tr>
+    </thead>
+    <tbody id="ruleset-rows">
+      <tr><td colspan="8" style="padding:18px;color:#605e5c">Loading&hellip;</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const REFRESH_MS = {{ refresh_seconds }} * 1000;
+const STATE_ORDER = ["Pending", "Overdue", "Missed", "Met", "Complete", "No SLA state"];
+let allRecords = [];
+let activeState = "";
+let activeSupportRegion = "";
+
+function remaining(mins, state = "") {
+  if (["achieved", "met", "complete", "completed"].includes(state.toLowerCase())) return "SLA met";
+  if (mins === null) return "-";
+  const over = mins < 0;
+  let m = Math.abs(mins);
+  const d = Math.floor(m / 1440); m -= d * 1440;
+  const h = Math.floor(m / 60); m = Math.round(m - h * 60);
+  const parts = [];
+  if (d) parts.push(d + "d");
+  if (d || h) parts.push(h + "h");
+  parts.push(m + "m");
+  return (over ? "-" : "") + parts.join(" ") + (over ? " overdue" : "");
+}
+
+function local(iso) {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleString();
+}
+
+function stateClass(state) {
+  return "state-" + state.replace(/ /g, "-");
+}
+
+function regionRecords() {
+  return activeSupportRegion
+    ? allRecords.filter(record => (record.support_region || "-") === activeSupportRegion)
+    : allRecords;
+}
+
+function visibleRecords() {
+  const records = regionRecords();
+  return activeState ? records.filter(record => record.dashboard_state === activeState) : records;
+}
+
+function stateCounts(records) {
+  return records.reduce((counts, record) => {
+    counts[record.dashboard_state] = (counts[record.dashboard_state] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function renderSupportRegions() {
+  const select = document.getElementById("support-region");
+  const regions = [...new Set(allRecords.map(record => record.support_region || "-").filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+  if (activeSupportRegion && !regions.includes(activeSupportRegion)) activeSupportRegion = "";
+  select.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "All Support Regions";
+  select.appendChild(allOption);
+  for (const region of regions) {
+    const option = document.createElement("option");
+    option.value = region;
+    option.textContent = region;
+    select.appendChild(option);
+  }
+  select.value = activeSupportRegion;
+  select.disabled = regions.length === 0;
+}
+
+function renderCards(counts) {
+  const cards = document.getElementById("state-cards");
+  cards.innerHTML = "";
+  const states = STATE_ORDER.filter(state => Object.hasOwn(counts, state));
+  for (const state of Object.keys(counts)) {
+    if (!states.includes(state)) states.push(state);
+  }
+  for (const item of [{ state: "", label: "All cases", count: regionRecords().length }, ...states.map(state => ({ state, label: state, count: counts[state] }))]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "card" + (item.state ? " " + stateClass(item.state) : "") + (activeState === item.state ? " active" : "");
+    button.setAttribute("aria-pressed", activeState === item.state ? "true" : "false");
+    const number = document.createElement("div");
+    number.className = "n";
+    number.textContent = item.count;
+    const label = document.createElement("div");
+    label.className = "l";
+    label.textContent = item.label;
+    button.append(number, label);
+    button.addEventListener("click", () => {
+      activeState = item.state;
+      renderCards(counts);
+      renderTable();
+    });
+    cards.appendChild(button);
+  }
+}
+
+function appendCell(row, value) {
+  const cell = document.createElement("td");
+  cell.textContent = value;
+  row.appendChild(cell);
+}
+
+function renderTable() {
+  const records = visibleRecords();
+  const body = document.getElementById("rows");
+  body.innerHTML = "";
+  if (!records.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 7;
+    cell.style.cssText = "padding:24px;color:#605e5c";
+    cell.textContent = "No service requests match the selected filters.";
+    row.appendChild(cell);
+    body.appendChild(row);
+  }
+  for (const record of records) {
+    const cssClass = stateClass(record.dashboard_state);
+    const row = document.createElement("tr");
+    row.className = cssClass;
+    appendCell(row, record.case_number);
+    appendCell(row, record.case_owner);
+    appendCell(row, local(record.sla_due_utc));
+    appendCell(row, remaining(record.minutes_remaining, record.sla_state));
+    const stateCell = document.createElement("td");
+    const pill = document.createElement("span");
+    pill.className = "pill " + cssClass;
+    pill.textContent = record.dashboard_state;
+    stateCell.appendChild(pill);
+    row.appendChild(stateCell);
+    appendCell(row, record.pod);
+    appendCell(row, record.country);
+    body.appendChild(row);
+  }
+  const filters = [];
+  if (activeState) filters.push("SLA State " + activeState);
+  if (activeSupportRegion) filters.push("Support Region " + activeSupportRegion);
+  const scope = filters.length ? " matching " + filters.join(" and ") : " total";
+  document.getElementById("status").textContent = records.length + scope + " service requests · last refreshed " + new Date().toLocaleTimeString();
+  document.getElementById("export").disabled = records.length === 0;
+}
+
+function csvValue(value) {
+  return '"' + String(value ?? "").replace(/"/g, '""') + '"';
+}
+
+function exportCsv() {
+  const header = ["Case number", "Case Owner", "SLA due (local)", "Time remaining", "SLA State", "Pod", "Country"];
+  const rows = visibleRecords().map(record => [record.case_number, record.case_owner, local(record.sla_due_utc), remaining(record.minutes_remaining, record.sla_state), record.dashboard_state, record.pod, record.country]);
+  const csv = [header, ...rows].map(row => row.map(csvValue).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  const exportScope = [activeState, activeSupportRegion].filter(Boolean).join("-") || "all";
+  link.download = "sla-service-requests-" + exportScope.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function refresh() {
+  const banner = document.getElementById("banner");
+  try {
+    const res = await fetch("/api/service-requests", { cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    banner.style.display = "none";
+
+    if (data.notes && data.notes.length) {
+      banner.innerHTML = data.notes.map(n => "&#9888; " + n).join("<br>");
+      banner.style.display = "block";
+    }
+
+    allRecords = data.records;
+    renderSupportRegions();
+    const counts = stateCounts(regionRecords());
+    if (activeState && !Object.hasOwn(counts, activeState)) activeState = "";
+    renderCards(counts);
+    renderTable();
+  } catch (err) {
+    banner.textContent = "Could not refresh from Dynamics: " + err.message;
+    banner.style.display = "block";
+  }
+}
+
+function outcomePill(run) {
+  const pill = document.createElement("span");
+  const outcome = run ? run.outcome : "not run yet";
+  pill.className = "outcome outcome-" + (run ? run.outcome : "none");
+  pill.textContent = outcome;
+  return pill;
+}
+
+async function refreshRulesets() {
+  const meta = document.getElementById("pipeline-meta");
+  const body = document.getElementById("ruleset-rows");
+  try {
+    const res = await fetch("/api/rulesets", { cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+
+    const rulesetCount = data.businesses.reduce((total, b) => total + b.rulesets.length, 0);
+    meta.textContent = data.businesses.length + " businesses · " + rulesetCount +
+      " rulesets · up to " + data.max_concurrent_runs + " concurrent runs, " +
+      data.run_timeout_seconds + "s budget each · local cache holds " + data.cache_size + " cases";
+
+    body.innerHTML = "";
+    for (const business of data.businesses) {
+      for (const ruleset of business.rulesets) {
+        const row = document.createElement("tr");
+        const first = document.createElement("td");
+        first.className = "biz";
+        first.textContent = business.business;
+        row.appendChild(first);
+        appendCell(row, ruleset.name);
+        appendCell(row, ruleset.matched_cases);
+        appendCell(row, ruleset.warn_minutes + "m");
+        appendCell(row, ruleset.alert_on.join(", "));
+        const outcomeCell = document.createElement("td");
+        outcomeCell.appendChild(outcomePill(ruleset.last_run));
+        row.appendChild(outcomeCell);
+        appendCell(row, ruleset.last_run ? ruleset.last_run.duration_ms + " ms" : "-");
+        appendCell(row, ruleset.last_run ? ruleset.last_run.sent : "-");
+        body.appendChild(row);
+      }
+    }
+    if (!body.children.length) {
+      const row = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 8;
+      cell.style.cssText = "padding:18px;color:#605e5c";
+      cell.textContent = "No enabled rulesets in rulesets.json.";
+      row.appendChild(cell);
+      body.appendChild(row);
+    }
+  } catch (err) {
+    meta.textContent = "Could not read the ruleset configuration: " + err.message;
+  }
+}
+
+document.getElementById("export").addEventListener("click", exportCsv);
+document.getElementById("support-region").addEventListener("change", event => {
+  activeSupportRegion = event.target.value;
+  const counts = stateCounts(regionRecords());
+  if (activeState && !Object.hasOwn(counts, activeState)) activeState = "";
+  renderCards(counts);
+  renderTable();
+});
+refresh();
+refreshRulesets();
+setInterval(refresh, REFRESH_MS);
+setInterval(refreshRulesets, REFRESH_MS);
+</script>
+</body>
+</html>

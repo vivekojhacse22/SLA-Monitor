@@ -1,0 +1,16 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.token_cache.json
+last_error.txt
+local.settings.json
+infra/main.bicepparam
+*.zip
+sla_cache.db
+sla_cache.db-wal
+sla_cache.db-shm
+report.txt
+app-startup.log
+app-startup.err

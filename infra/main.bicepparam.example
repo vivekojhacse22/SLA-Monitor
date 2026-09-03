@@ -1,0 +1,13 @@
+using './main.bicep'
+
+param namePrefix = 'slamon'
+param dataverseClientId = '<dataverse-app-client-id>'
+param dataverseClientSecret = '<dataverse-app-client-secret>'
+param teamsBotClientId = '<teams-bot-client-id>'
+param teamsBotClientSecret = '<teams-bot-client-secret>'
+param emailClientId = '<mail-app-client-id>'
+param emailClientSecret = '<mail-app-client-secret>'
+param emailNotificationsEnabled = true
+param emailSender = 'viojha@microsoft.com'
+param emailRecipients = 'viojha@microsoft.com'
+param dataverseUrl = 'https://sbamanager.crm.dynamics.com'

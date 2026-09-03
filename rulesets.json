@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "concurrency": {
+    "max_concurrent_runs": 50,
+    "run_timeout_seconds": 20
+  },
+  "businesses": [
+    {
+      "name": "DTP DP Integration - India",
+      "enabled": true,
+      "match": {},
+      "rulesets": [
+        {
+          "id": "dtp-dp-integration-india-90",
+          "name": "DTP DP Integration India - 90 minutes",
+          "enabled": true,
+          "warn_minutes": 90,
+          "after_minutes": 60,
+          "alert_on": ["pending"],
+          "match": {},
+          "notify": {
+            "teams_chat_id": "",
+            "teams_webhook_url": "",
+            "email_recipients": ["viojha@microsoft.com"]
+          }
+        },
+        {
+          "id": "dtp-dp-integration-india-60",
+          "name": "DTP DP Integration India - 60 minutes",
+          "enabled": true,
+          "warn_minutes": 60,
+          "after_minutes": 30,
+          "alert_on": ["pending"],
+          "match": {},
+          "notify": {
+            "teams_chat_id": "",
+            "teams_webhook_url": "",
+            "email_recipients": ["viojha@microsoft.com"]
+          }
+        },
+        {
+          "id": "dtp-dp-integration-india-30",
+          "name": "DTP DP Integration India - 30 minutes",
+          "enabled": true,
+          "warn_minutes": 30,
+          "after_minutes": 15,
+          "alert_on": ["pending"],
+          "match": {},
+          "notify": {
+            "teams_chat_id": "",
+            "teams_webhook_url": "",
+            "email_recipients": ["viojha@microsoft.com"]
+          }
+        },
+        {
+          "id": "dtp-dp-integration-india-15",
+          "name": "DTP DP Integration India - 15 minutes",
+          "enabled": true,
+          "warn_minutes": 15,
+          "after_minutes": 5,
+          "alert_on": ["pending"],
+          "match": {},
+          "notify": {
+            "teams_chat_id": "",
+            "teams_webhook_url": "",
+            "email_recipients": ["viojha@microsoft.com"]
+          }
+        },
+        {
+          "id": "dtp-dp-integration-india-5",
+          "name": "DTP DP Integration India - 5 minutes",
+          "enabled": true,
+          "warn_minutes": 5,
+          "alert_on": ["pending"],
+          "match": {},
+          "notify": {
+            "teams_chat_id": "",
+            "teams_webhook_url": "",
+            "email_recipients": ["viojha@microsoft.com"]
+          }
+        },
+        {
+          "id": "dtp-dp-integration-india-met-1",
+          "name": "DTP DP Integration India - SLA met within 1 minute",
+          "enabled": true,
+          "warn_minutes": 1,
+          "alert_on": ["met"],
+          "match": {},
+          "notify": {
+            "teams_chat_id": "",
+            "teams_webhook_url": "",
+            "email_recipients": ["viojha@microsoft.com"]
+          }
+        }
+      ]
+    }
+  ]
+}
