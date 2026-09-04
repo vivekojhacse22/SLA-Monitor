@@ -1,11 +1,13 @@
 """Post pending SLA case summaries to Microsoft Teams."""
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import requests
 
 
 MAX_PAYLOAD_BYTES = 25_000
+IST = timezone(timedelta(hours=5, minutes=30), "IST")
 
 
 class TeamsNotificationError(RuntimeError):
@@ -35,7 +37,48 @@ def _remaining(record):
     return f"{int(hours)}h {remaining_minutes:.0f}m remaining"
 
 
+def _parse_time(value):
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _format_ist(value):
+    parsed = _parse_time(value)
+    if not parsed:
+        return "-"
+    return parsed.astimezone(IST).strftime("%Y-%m-%d %H:%M:%S IST")
+
+
+def _completed_time(record):
+    for key in ("completed", "completed_utc", "completed_on", "completed_at", "modified_on"):
+        value = record.get(key)
+        if value:
+            return _format_ist(value)
+    return "-"
+
+
 def _case_section(record):
+    met = _is_met_record(record)
+    facts = [
+        {"title": "Country", "value": str(record.get("country") or "-")},
+        {
+            "title": "Owner",
+            "value": str(record.get("case_owner") or "(unassigned)"),
+        },
+    ]
+    if met:
+        facts.append({"title": "Completed", "value": _completed_time(record)})
+    else:
+        facts.append({"title": "SLA", "value": _remaining(record)})
+    facts.append({"title": "SLA deadline", "value": _format_ist(record.get("sla_due_utc"))})
+
     return {
         "type": "Container",
         "separator": True,
@@ -48,29 +91,24 @@ def _case_section(record):
             },
             {
                 "type": "FactSet",
-                "facts": [
-                    {
-                        "title": "Owner",
-                        "value": str(record.get("case_owner") or "(unassigned)"),
-                    },
-                    {"title": "SLA", "value": _remaining(record)},
-                ],
+                "facts": facts,
             },
         ],
     }
 
 
-def _is_met_batch(records):
+def _is_met_record(record):
     met_states = {"achieved", "met", "complete", "completed"}
-    return bool(records) and all(
-        str(record.get("sla_state") or "").strip().lower() in met_states
-        for record in records
-    )
+    return str(record.get("sla_state") or "").strip().lower() in met_states
+
+
+def _is_met_batch(records):
+    return bool(records) and all(_is_met_record(record) for record in records)
 
 
 def _alert_title(met, max_minutes=60):
     if met:
-        return "SLA met with 1 minute or less remaining"
+        return "SLA met"
     if max_minutes == 60:
         return "Pending SLA cases due within 1 hour"
     return f"Pending SLA cases due within {max_minutes} minutes"
