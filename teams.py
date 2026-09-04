@@ -2,12 +2,18 @@
 
 import json
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 import requests
 
 
 MAX_PAYLOAD_BYTES = 25_000
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
+DFM_CASE_URL = (
+    "https://onesupport.crm.dynamics.com/main.aspx"
+    "?appname=msdyn_CustomerServiceWorkspace"
+    "&pagetype=entityrecord&etn=incident&id={case_id}"
+)
 
 
 class TeamsNotificationError(RuntimeError):
@@ -64,6 +70,14 @@ def _completed_time(record):
     return "-"
 
 
+def _case_link(record):
+    case_number = str(record.get("case_number") or "(no case number)")
+    case_id = str(record.get("id") or "").strip("{} ")
+    if not case_id:
+        return case_number
+    return f"[{case_number}]({DFM_CASE_URL.format(case_id=quote(case_id))})"
+
+
 def _case_section(record):
     met = _is_met_record(record)
     facts = [
@@ -85,7 +99,7 @@ def _case_section(record):
         "items": [
             {
                 "type": "TextBlock",
-                "text": str(record.get("case_number") or "(no case number)"),
+                "text": _case_link(record),
                 "weight": "Bolder",
                 "wrap": True,
             },
