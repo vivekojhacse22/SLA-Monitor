@@ -46,6 +46,7 @@ TOKEN_CACHE_FILE = _env("TOKEN_CACHE_FILE", ".token_cache.json")
 ENTITY_SET = _env("ENTITY_SET", "crmee_service_requests")
 
 COL_ID = _env("COL_ID", "crmee_service_requestid")
+COL_CASE_URL = _env("COL_CASE_URL", "crmee_active_system_uri")
 COL_CASE_NUMBER = _env("COL_CASE_NUMBER", "crmee_sr_number")
 COL_OWNER = _env("COL_OWNER", "_ownerid_value")
 COL_CASE_OWNER = _env("COL_CASE_OWNER", "_crmee_case_owner_value")

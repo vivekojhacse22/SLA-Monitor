@@ -254,7 +254,7 @@ def select_columns():
     """The $select list. Shared by the dashboard query and the orchestrator."""
     return ",".join(
         dict.fromkeys(
-            [config.COL_ID, config.COL_CASE_NUMBER, config.COL_STATE,
+            [config.COL_ID, config.COL_CASE_URL, config.COL_CASE_NUMBER, config.COL_STATE,
              config.COL_STATUS_CODE, config.COL_SLA_START, config.COL_OWNER,
              config.COL_CASE_OWNER, config.COL_SLA_STATE, config.COL_SLA_MET,
              config.COL_COUNTRY, config.COL_SUPPORT_REGION, config.COL_PRODUCT,
@@ -467,6 +467,7 @@ def classify(rows, now=None):
         records.append(
             {
                 "id": row.get(config.COL_ID),
+                "case_url": row.get(config.COL_CASE_URL),
                 "case_number": case_number,
                 "case_owner": row.get(case_owner_label) or row.get(case_owner_key) or "(unassigned)",
                 "sla_due_utc": due.isoformat() if due else None,

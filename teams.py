@@ -72,6 +72,9 @@ def _completed_time(record):
 
 def _case_link(record):
     case_number = str(record.get("case_number") or "(no case number)")
+    case_url = str(record.get("case_url") or "").strip()
+    if case_url:
+        return f"[{case_number}]({case_url})"
     case_id = str(record.get("id") or "").strip("{} ")
     if not case_id:
         return case_number
