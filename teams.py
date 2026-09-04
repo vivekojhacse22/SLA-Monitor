@@ -10,7 +10,7 @@ import requests
 MAX_PAYLOAD_BYTES = 25_000
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
 DFM_CASE_URL = (
-    "https://onesupport.crm.dynamics.com/main.aspx"
+    "https://onesupport.crm.dynamics.com//main.aspx"
     "?appname=msdyn_CustomerServiceWorkspace"
     "&pagetype=entityrecord&etn=incident&id={case_id}"
 )
