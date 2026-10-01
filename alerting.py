@@ -33,18 +33,39 @@ async def run_alert_cycle(
     max_minutes=60,
     selector=None,
     namespace="default",
+    legacy_namespaces=(),
 ):
     selector = selector or teams.select_due_soon_pending
     eligible = selector(records, max_minutes=max_minutes)
-    pending = [
-        record
-        for record in eligible
-        if not state.was_sent(alert_fingerprint(record, namespace))
-    ]
-    if not pending:
-        return AlertRunResult(len(eligible), 0, len(eligible), 0)
+    pending = []
+    claims = []
+    skipped_duplicate = 0
+    for record in eligible:
+        fingerprint = alert_fingerprint(record, namespace)
+        case_number = str(record.get("case_number") or "")
+        if any(
+            state.was_sent(alert_fingerprint(record, legacy_namespace))
+            for legacy_namespace in legacy_namespaces
+        ):
+            state.mark_sent(fingerprint, case_number)
+            skipped_duplicate += 1
+            continue
+        if state.claim_notification(fingerprint, case_number):
+            pending.append(record)
+            claims.append(fingerprint)
+        else:
+            skipped_duplicate += 1
 
-    message_count = await sender(pending)
+    if not pending:
+        return AlertRunResult(len(eligible), 0, skipped_duplicate, 0)
+
+    try:
+        message_count = await sender(pending)
+    except Exception:
+        for fingerprint in claims:
+            state.release_notification_claim(fingerprint)
+        raise
+
     for record in pending:
         state.mark_sent(
             alert_fingerprint(record, namespace),
@@ -53,6 +74,6 @@ async def run_alert_cycle(
     return AlertRunResult(
         eligible=len(eligible),
         sent=len(pending),
-        skipped_duplicate=len(eligible) - len(pending),
+        skipped_duplicate=skipped_duplicate,
         messages=message_count,
     )

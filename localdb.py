@@ -4,8 +4,8 @@ It holds three things, exactly as the architecture describes:
 
 1. Active service-request cases. Rows are inserted or refreshed by the
     incremental sync and deleted when they disappear from a full active query.
-2. Per-ruleset notification state, so each ruleset remembers what it has
-   already alerted on and a case is never announced twice by the same ruleset.
+2. Shared notification state, so concurrent jobs using this database atomically
+   claim a case condition and never announce it twice.
 3. The business and ruleset configuration JSON, cached so a run can start even
    if rulesets.json is momentarily unreachable.
 
@@ -187,17 +187,42 @@ class LocalStore:
             ).fetchone()
         return row is not None
 
+    def claim_notification(self, fingerprint, case_number="", ruleset_id=""):
+        """Atomically reserve a notification across every process using this DB."""
+        with self._lock:
+            cursor = self._connection.execute(
+                """
+                INSERT OR IGNORE INTO notifications
+                    (fingerprint, ruleset_id, case_number, sent_utc)
+                VALUES (?, ?, ?, ?)
+                """,
+                (fingerprint, ruleset_id, case_number, _now()),
+            )
+            self._connection.commit()
+        return cursor.rowcount == 1
+
     def mark_sent(self, fingerprint, case_number="", ruleset_id=""):
         with self._lock:
             self._connection.execute(
                 """
                 INSERT INTO notifications (fingerprint, ruleset_id, case_number, sent_utc)
                 VALUES (?, ?, ?, ?)
-                ON CONFLICT(fingerprint) DO UPDATE SET sent_utc = excluded.sent_utc
+                ON CONFLICT(fingerprint) DO UPDATE SET
+                    ruleset_id = excluded.ruleset_id,
+                    case_number = excluded.case_number,
+                    sent_utc = excluded.sent_utc
                 """,
                 (fingerprint, ruleset_id, case_number, _now()),
             )
             self._connection.commit()
+
+    def release_notification_claim(self, fingerprint):
+        with self._lock:
+            cursor = self._connection.execute(
+                "DELETE FROM notifications WHERE fingerprint = ?", (fingerprint,)
+            )
+            self._connection.commit()
+        return cursor.rowcount == 1
 
     def prune_notifications(self, older_than_days=7):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=older_than_days)).isoformat()

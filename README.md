@@ -36,6 +36,10 @@ Clear either value to disable that filter. `SUPPORT_POD_CONTAINS` is optional.
 
 Set `TEAMS_NOTIFICATIONS_ENABLED=true` and provide `TEAMS_WEBHOOK_URL`. The rules in `rulesets.json` control alert thresholds and whether pending or met cases are sent. The webhook flow must be enabled and configured to post to the intended Teams channel.
 
+Every concurrently running job must set `LOCAL_DB_PATH` to the same SQLite file. Before posting, a job atomically claims each case, SLA deadline, and alert condition (`pending`, `missed`, or `met`) in that shared database. A claim already made by another job is skipped. Definite webhook failures release their claims for retry; interrupted or timed-out sends keep their claims to avoid an uncertain delivery being posted twice. The notification history is retained for `NOTIFICATION_RETENTION_DAYS`.
+
+Use the shared SQLite file only for jobs on the same machine. SQLite WAL databases are not suitable for sharing through a network filesystem; jobs on separate machines require a server-backed shared state store.
+
 ## Runtime files
 
 - `app.py` starts the browser dashboard and refresh worker.

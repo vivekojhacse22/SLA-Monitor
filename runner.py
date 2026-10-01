@@ -112,7 +112,8 @@ async def _run_one(ruleset, records, store, senders, timeout_seconds):
                     lambda batch, rs=ruleset, k=kind: senders[k](rs, batch),
                     max_minutes=ruleset.warn_minutes,
                     selector=selector,
-                    namespace=f"{ruleset.id}:{kind}",
+                    namespace=kind,
+                    legacy_namespaces=(f"{ruleset.id}:{kind}",),
                 )
                 result.eligible += cycle.eligible
                 result.sent += cycle.sent
@@ -141,8 +142,16 @@ class _RulesetState:
     def was_sent(self, fingerprint):
         return self._store.was_sent(fingerprint)
 
+    def claim_notification(self, fingerprint, case_number=""):
+        return self._store.claim_notification(
+            fingerprint, case_number, self._ruleset_id
+        )
+
     def mark_sent(self, fingerprint, case_number=""):
         self._store.mark_sent(fingerprint, case_number, self._ruleset_id)
+
+    def release_notification_claim(self, fingerprint):
+        self._store.release_notification_claim(fingerprint)
 
 
 async def run_cycle(ruleset_config, records, store, senders):
